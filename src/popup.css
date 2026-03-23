@@ -1,0 +1,115 @@
+* {
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: "ATSAller";
+  src: url("../assets/aller.regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #111722;
+  color: #edf3f8;
+  font-family: "ATSAller", "Segoe UI", Tahoma, sans-serif;
+}
+
+.root {
+  width: 320px;
+  padding: 14px;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+p {
+  margin: 0;
+  font-size: 12px;
+  color: #c6d4e3;
+  text-align: center;
+}
+
+.logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+button {
+  width: 100%;
+  height: 36px;
+  border: 1px solid #35506d;
+  background: #1f3145;
+  color: #f4f9ff;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.btn-row button {
+  width: 100%;
+  height: 34px;
+  font-size: 12px;
+}
+
+button:hover {
+  background: #294260;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+#toggle-help {
+  color: #d7e5f5;
+}
+
+.tab-line {
+  color: #f0f6fd;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.mode-label {
+  width: 100%;
+  text-align: left;
+  color: #d8e6f6;
+  font-size: 12px;
+}
+
+select {
+  width: 100%;
+  height: 34px;
+  border: 1px solid #35506d;
+  background: #1a2a3c;
+  color: #f4f9ff;
+  border-radius: 8px;
+  font-size: 13px;
+  padding: 0 10px;
+}
+
+#save-status {
+  width: 100%;
+  min-height: 16px;
+  text-align: left;
+  color: #d8e6f6;
+}
