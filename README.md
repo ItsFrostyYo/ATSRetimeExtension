@@ -74,8 +74,3 @@ You can copy, hide, or re-open the mod note panel.
 - **Save Current Site Retime** saves the current video/site retime into ATS saved data.
 - **Export Saved Retimes File** exports all saved retimes into one JSON backup file.
 - **Import Saved Retimes File** imports and merges saved retimes from a JSON file.
-
-## Notes
-
-- ATS is intended for precise frame-based retiming.
-- Always verify start/end frames before submitting final times.
