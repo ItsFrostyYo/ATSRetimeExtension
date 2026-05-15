@@ -1,6 +1,6 @@
-# Assembly-TimeSharp (ATS)
+# SNRetimeExtension
 
-Assembly-TimeSharp is a browser retiming extension made for frame-accurate speedrun timing on video runs.
+SNRetimeExtension is a browser retiming extension made for frame-accurate speedrun timing on video runs.
 
 ## What It Works On
 
@@ -14,13 +14,13 @@ Assembly-TimeSharp is a browser retiming extension made for frame-accurate speed
 1. Open Chrome and go to `chrome://extensions`.
 2. Turn on **Developer mode**.
 3. Click **Load unpacked**.
-4. Select this folder: `ATS Retime Tool`.
-5. Click the ATS extension icon and press **Enable** on the current tab.
+4. Select this folder: `SNRetimeExtension`.
+5. Click the SNR extension icon and press **Enable** on the current tab.
 
 ## How To Use
 
 1. Open your run video.
-2. Enable ATS from the extension popup on that tab.
+2. Enable SNR from the extension popup on that tab.
 3. Use frame step or play/pause to reach exact frames.
 4. Press **Confirm Start** at the start frame.
 5. Press **Confirm End** at the end frame.
@@ -62,7 +62,7 @@ Actions per entry:
 
 ## Mod Note
 
-After confirming end, ATS generates a mod note box with:
+After confirming end, SNR generates a mod note box with:
 
 - `Mod Note: Retimed to ... RTA`
 - If load removal is used, it also includes `IGT` or `LRT`
@@ -71,6 +71,6 @@ You can copy, hide, or re-open the mod note panel.
 
 ## Saving / Backup
 
-- **Save Current Site Retime** saves the current video/site retime into ATS saved data.
+- **Save Current Site Retime** saves the current video/site retime into SNR saved data.
 - **Export Saved Retimes File** exports all saved retimes into one JSON backup file.
 - **Import Saved Retimes File** imports and merges saved retimes from a JSON file.

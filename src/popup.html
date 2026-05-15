@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ATS</title>
+    <title>SNR</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <main class="root">
-      <img class="logo" id="logo-img" alt="ATS logo" />
-      <h1>Assembly-TimeSharp</h1>
+      <img class="logo" id="logo-img" alt="SNR logo" />
+      <h1>SNRetimeExtension</h1>
       <button id="toggle-btn" type="button">Loading...</button>
       <p id="toggle-help">This will Enable/Disable on the Current Tab</p>
       <p class="tab-line" id="site-label">Current Tab: Loading...</p>
@@ -18,6 +18,10 @@
         <option value="IGT">IGT</option>
         <option value="LRT">LRT</option>
       </select>
+      <label class="chk" for="special-layout">
+        <input id="special-layout" type="checkbox" />
+        <span>Special Site Layout</span>
+      </label>
       <button id="save-btn" type="button">Save Current Site Retime</button>
       <div class="btn-row">
         <button id="export-btn" type="button">Export Saved Retimes File</button>

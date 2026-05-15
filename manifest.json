@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Assembly-TimeSharp",
-  "short_name": "ATS",
+  "name": "SNRetimeExtension",
+  "short_name": "SNR",
   "version": "1.0.0",
-  "description": "Assembly-TimeSharp is a Frame-Accurate Speedrun Retiming Tool for Youtube and Twitch, works on Speedrun.com.",
+  "description": "SNRetimeExtension is a Frame-Accurate Speedrun Retiming Tool for Youtube and Twitch, works on Speedrun.com.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -16,7 +16,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "ATS.png",
+        "SNRetimeExtension.png",
         "assets/aller.regular.ttf",
         "assets/icons/*"
       ],
@@ -35,7 +35,7 @@
     "service_worker": "src/background.js"
   },
   "action": {
-    "default_title": "Assembly-TimeSharp (ATS)",
+    "default_title": "SNRetimeExtension",
     "default_icon": {
       "16": "assets/icons/icon16.png",
       "32": "assets/icons/icon32.png",

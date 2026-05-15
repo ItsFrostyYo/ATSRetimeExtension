@@ -3,7 +3,7 @@
 }
 
 @font-face {
-  font-family: "ATSAller";
+  font-family: "SNRAller";
   src: url("../assets/aller.regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
@@ -14,7 +14,7 @@ body {
   padding: 0;
   background: #111722;
   color: #edf3f8;
-  font-family: "ATSAller", "Segoe UI", Tahoma, sans-serif;
+  font-family: "SNRAller", "Segoe UI", Tahoma, sans-serif;
 }
 
 .root {
@@ -94,6 +94,21 @@ button:disabled {
   text-align: left;
   color: #d8e6f6;
   font-size: 12px;
+}
+
+.chk {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e4eef9;
+  font-size: 12px;
+}
+
+.chk input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
 }
 
 select {

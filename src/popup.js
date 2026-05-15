@@ -58,7 +58,7 @@ async function detectEmbeddedSource(tabId) {
 
 async function getTabEnabled(tabId) {
   const response = await chrome.runtime.sendMessage({
-    type: "ATS_GET_TAB_STATE",
+    type: "SNR_GET_TAB_STATE",
     tabId
   });
   if (!response || !response.ok) return false;
@@ -67,7 +67,7 @@ async function getTabEnabled(tabId) {
 
 async function setTabEnabled(tabId, enabled) {
   const response = await chrome.runtime.sendMessage({
-    type: "ATS_SET_TAB_STATE",
+    type: "SNR_SET_TAB_STATE",
     tabId,
     enabled
   });
@@ -76,7 +76,7 @@ async function setTabEnabled(tabId, enabled) {
 
 async function getTabLabelMode(tabId) {
   const response = await chrome.runtime.sendMessage({
-    type: "ATS_GET_TAB_LABEL_MODE",
+    type: "SNR_GET_TAB_LABEL_MODE",
     tabId
   });
   if (!response || !response.ok) return "IGT";
@@ -85,29 +85,47 @@ async function getTabLabelMode(tabId) {
 
 async function setTabLabelMode(tabId, mode) {
   const response = await chrome.runtime.sendMessage({
-    type: "ATS_SET_TAB_LABEL_MODE",
+    type: "SNR_SET_TAB_LABEL_MODE",
     tabId,
     mode
   });
   return Boolean(response && response.ok);
 }
 
+async function getTabSpecialLayout(tabId) {
+  const response = await chrome.runtime.sendMessage({
+    type: "SNR_GET_TAB_SPECIAL_LAYOUT",
+    tabId
+  });
+  if (!response || !response.ok) return false;
+  return Boolean(response.enabled);
+}
+
+async function setTabSpecialLayout(tabId, enabled) {
+  const response = await chrome.runtime.sendMessage({
+    type: "SNR_SET_TAB_SPECIAL_LAYOUT",
+    tabId,
+    enabled: Boolean(enabled)
+  });
+  return Boolean(response && response.ok);
+}
+
 async function saveCurrentRetime(tabId) {
   return await chrome.runtime.sendMessage({
-    type: "ATS_SAVE_CURRENT_RETIME",
+    type: "SNR_SAVE_CURRENT_RETIME",
     tabId
   });
 }
 
 async function exportSavedRetimes() {
   return await chrome.runtime.sendMessage({
-    type: "ATS_EXPORT_SAVED_RETIMES"
+    type: "SNR_EXPORT_SAVED_RETIMES"
   });
 }
 
 async function importSavedRetimes(data) {
   return await chrome.runtime.sendMessage({
-    type: "ATS_IMPORT_SAVED_RETIMES",
+    type: "SNR_IMPORT_SAVED_RETIMES",
     data
   });
 }
@@ -117,6 +135,7 @@ async function initPopup() {
   const siteLabel = document.getElementById("site-label");
   const toggleBtn = document.getElementById("toggle-btn");
   const labelMode = document.getElementById("label-mode");
+  const specialLayout = document.getElementById("special-layout");
   const saveBtn = document.getElementById("save-btn");
   const exportBtn = document.getElementById("export-btn");
   const importBtn = document.getElementById("import-btn");
@@ -133,6 +152,7 @@ async function initPopup() {
     toggleBtn.textContent = "Unavailable";
     toggleBtn.disabled = true;
     labelMode.disabled = true;
+    specialLayout.disabled = true;
     saveBtn.disabled = true;
     exportBtn.disabled = true;
     importBtn.disabled = true;
@@ -147,9 +167,10 @@ async function initPopup() {
   siteLabel.textContent = `Current Tab: On ${source} Retiming a Speedrun - ${title}`;
 
   async function refreshUi() {
-    const [enabled, mode] = await Promise.all([
+    const [enabled, mode, special] = await Promise.all([
       getTabEnabled(tab.id),
-      getTabLabelMode(tab.id)
+      getTabLabelMode(tab.id),
+      getTabSpecialLayout(tab.id)
     ]);
     toggleBtn.textContent = enabled ? "Disable" : "Enable";
     toggleBtn.disabled = false;
@@ -157,6 +178,8 @@ async function initPopup() {
     labelMode.value = mode;
     labelMode.dataset.mode = mode;
     labelMode.disabled = false;
+    specialLayout.checked = special;
+    specialLayout.disabled = false;
     saveBtn.disabled = false;
     exportBtn.disabled = false;
     importBtn.disabled = false;
@@ -165,6 +188,7 @@ async function initPopup() {
 
   toggleBtn.disabled = true;
   labelMode.disabled = true;
+  specialLayout.disabled = true;
   saveBtn.disabled = true;
   exportBtn.disabled = true;
   importBtn.disabled = true;
@@ -194,6 +218,19 @@ async function initPopup() {
     await refreshUi();
   });
 
+  specialLayout.addEventListener("change", async () => {
+    const next = Boolean(specialLayout.checked);
+    specialLayout.disabled = true;
+    const ok = await setTabSpecialLayout(tab.id, next);
+    if (!ok) {
+      specialLayout.checked = !next;
+      setStatus("Failed to update Special Site Layout.");
+    } else {
+      setStatus(`Special Site Layout ${next ? "enabled" : "disabled"} for this tab.`);
+    }
+    await refreshUi();
+  });
+
   saveBtn.addEventListener("click", async () => {
     saveBtn.disabled = true;
     setStatus("Saving retime for this site...");
@@ -202,7 +239,7 @@ async function initPopup() {
       setStatus(`Saved for key: ${result.key}`);
     } else {
       const reason = result?.error ? ` (${result.error})` : "";
-      setStatus(`Save failed${reason}. Make sure ATS is enabled on this tab.`);
+      setStatus(`Save failed${reason}. Make sure SNR is enabled on this tab.`);
     }
     saveBtn.disabled = false;
   });

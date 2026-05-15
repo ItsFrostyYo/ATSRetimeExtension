@@ -1,9 +1,10 @@
 "use strict";
 
-const ENABLED_TABS_KEY = "ats_enabled_tabs_v1";
-const TAB_LABEL_MODE_KEY = "ats_tab_label_mode_v1";
-const LABEL_MODE_DEFAULT_KEY = "ats_label_mode_default_v1";
-const SAVED_RETIMES_KEY = "ats_saved_retimes_v1";
+const ENABLED_TABS_KEY = "SNR_enabled_tabs_v1";
+const TAB_LABEL_MODE_KEY = "SNR_tab_label_mode_v1";
+const TAB_SPECIAL_LAYOUT_KEY = "SNR_tab_special_layout_v1";
+const LABEL_MODE_DEFAULT_KEY = "SNR_label_mode_default_v1";
+const SAVED_RETIMES_KEY = "SNR_saved_retimes_v1";
 const FRAME_REGISTRY = new Map();
 const RETIME_EXPORT_FORMAT = "ats-site-retime-v1";
 const RETIMES_EXPORT_ALL_FORMAT = "ats-retimes-all-v1";
@@ -55,10 +56,30 @@ function normalizePersistKeyFromUrl(urlString) {
         if (/^\d+$/.test(n)) return `twitch:${n}`;
       }
     }
+    if (h === "speedrun.com") {
+      const run = parseSpeedrunRunPath(p);
+      if (run?.game && run?.run) {
+        return `speedrun:${run.game}:${run.run}`;
+      }
+    }
     return `url:${h}${p}`;
   } catch (_error) {
     return "";
   }
+}
+
+function parseSpeedrunRunPath(pathname) {
+  const seg = String(pathname || "/").split("/").filter(Boolean);
+  if (!seg.length) return null;
+  const hasLocale = /^[a-z]{2}(?:-[a-z]{2})?$/i.test(seg[0] || "");
+  const start = hasLocale ? 1 : 0;
+  const i = seg.findIndex((x, idx) => idx >= start && String(x).toLowerCase() === "runs");
+  if (i <= start || i >= seg.length - 1) return null;
+  const game = seg[i - 1];
+  const run = seg[i + 1];
+  const extra = seg.slice(i + 2);
+  if (!game || !run || extra.length > 0) return null;
+  return { game, run };
 }
 
 async function getTabPersistInfo(tabId) {
@@ -117,6 +138,15 @@ async function setTabLabelModeMap(map) {
   await chrome.storage.session.set({ [TAB_LABEL_MODE_KEY]: map });
 }
 
+async function getTabSpecialLayoutMap() {
+  const data = await chrome.storage.session.get(TAB_SPECIAL_LAYOUT_KEY);
+  return data[TAB_SPECIAL_LAYOUT_KEY] || {};
+}
+
+async function setTabSpecialLayoutMap(map) {
+  await chrome.storage.session.set({ [TAB_SPECIAL_LAYOUT_KEY]: map });
+}
+
 function normalizeLabelMode(mode) {
   return mode === "LRT" ? "LRT" : "IGT";
 }
@@ -147,6 +177,21 @@ async function setTabLabelMode(tabId, mode) {
   await setDefaultLabelMode(normalized);
 }
 
+async function getTabSpecialLayout(tabId) {
+  const map = await getTabSpecialLayoutMap();
+  return Boolean(map[String(tabId)]);
+}
+
+async function setTabSpecialLayout(tabId, enabled) {
+  const map = await getTabSpecialLayoutMap();
+  if (enabled) {
+    map[String(tabId)] = true;
+  } else {
+    delete map[String(tabId)];
+  }
+  await setTabSpecialLayoutMap(map);
+}
+
 async function isTabEnabled(tabId) {
   const map = await getEnabledTabsMap();
   return Boolean(map[String(tabId)]);
@@ -162,14 +207,14 @@ async function setTabEnabled(tabId, enabled) {
   await setEnabledTabsMap(map);
 }
 
-async function injectATS(tabId) {
+async function injectSNR(tabId) {
   await chrome.scripting.executeScript({
     target: { tabId, allFrames: true },
     files: ["src/content.js"]
   });
 }
 
-async function disableATS(tabId) {
+async function disableSNR(tabId) {
   await chrome.scripting.executeScript({
     target: { tabId, allFrames: true },
     func: () => {
@@ -180,6 +225,17 @@ async function disableATS(tabId) {
   });
 }
 
+function isSpeedrunRunUrl(urlString) {
+  try {
+    const u = new URL(String(urlString || ""));
+    const host = u.hostname.toLowerCase().replace(/^www\./, "");
+    if (host !== "speedrun.com") return false;
+    return !!parseSpeedrunRunPath(u.pathname || "");
+  } catch (_error) {
+    return false;
+  }
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   (async () => {
     if (!message || !message.type) {
@@ -187,7 +243,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_GET_TAB_STATE") {
+    if (message.type === "SNR_GET_TAB_STATE") {
       const tabId = Number(message.tabId);
       if (!Number.isInteger(tabId)) {
         sendResponse({ ok: false });
@@ -197,7 +253,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_SET_TAB_STATE") {
+    if (message.type === "SNR_SET_TAB_STATE") {
       const tabId = Number(message.tabId);
       const enabled = Boolean(message.enabled);
       if (!Number.isInteger(tabId)) {
@@ -207,15 +263,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
       await setTabEnabled(tabId, enabled);
       if (enabled) {
-        await injectATS(tabId);
+        await injectSNR(tabId);
       } else {
-        await disableATS(tabId);
+        await disableSNR(tabId);
       }
       sendResponse({ ok: true, enabled });
       return;
     }
 
-    if (message.type === "ATS_GET_TAB_LABEL_MODE") {
+    if (message.type === "SNR_GET_TAB_LABEL_MODE") {
       const tabId = Number(message.tabId);
       if (!Number.isInteger(tabId)) {
         sendResponse({ ok: false });
@@ -225,7 +281,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_SET_TAB_LABEL_MODE") {
+    if (message.type === "SNR_SET_TAB_LABEL_MODE") {
       const tabId = Number(message.tabId);
       const mode = normalizeLabelMode(message.mode);
       if (!Number.isInteger(tabId)) {
@@ -234,7 +290,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }
       await setTabLabelMode(tabId, mode);
       try {
-        await chrome.tabs.sendMessage(tabId, { type: "ATS_SET_LABEL_MODE", mode });
+        await chrome.tabs.sendMessage(tabId, { type: "SNR_SET_LABEL_MODE", mode }, { frameId: 0 });
       } catch (_error) {
         // Content script may not be injected yet; mode is still persisted.
       }
@@ -242,7 +298,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_GET_LABEL_MODE") {
+    if (message.type === "SNR_GET_LABEL_MODE") {
       const sender = _sender;
       const tabId = sender?.tab?.id;
       if (!Number.isInteger(tabId)) {
@@ -253,8 +309,73 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_SAVE_CURRENT_RETIME") {
+    if (message.type === "SNR_GET_TAB_SPECIAL_LAYOUT") {
       const tabId = Number(message.tabId);
+      if (!Number.isInteger(tabId)) {
+        sendResponse({ ok: false });
+        return;
+      }
+      sendResponse({ ok: true, enabled: await getTabSpecialLayout(tabId) });
+      return;
+    }
+
+    if (message.type === "SNR_SET_TAB_SPECIAL_LAYOUT") {
+      const tabId = Number(message.tabId);
+      const enabled = Boolean(message.enabled);
+      if (!Number.isInteger(tabId)) {
+        sendResponse({ ok: false });
+        return;
+      }
+      await setTabSpecialLayout(tabId, enabled);
+      if (enabled) {
+        try {
+          const tab = await chrome.tabs.get(tabId);
+          if (isSpeedrunRunUrl(tab?.url)) {
+            await setTabEnabled(tabId, true);
+            await injectSNR(tabId);
+          }
+        } catch (_error) {
+          // Ignore lookup/injection failures here.
+        }
+      }
+      try {
+        await chrome.tabs.sendMessage(tabId, { type: "SNR_SET_SPECIAL_LAYOUT", enabled }, { frameId: 0 });
+      } catch (_error) {
+        // Content script may not be injected yet.
+      }
+      sendResponse({ ok: true, enabled });
+      return;
+    }
+
+    if (message.type === "SNR_GET_SPECIAL_LAYOUT") {
+      const sender = _sender;
+      const tabId = sender?.tab?.id;
+      if (!Number.isInteger(tabId)) {
+        sendResponse({ ok: false });
+        return;
+      }
+      sendResponse({ ok: true, enabled: await getTabSpecialLayout(tabId) });
+      return;
+    }
+
+    if (message.type === "SNR_REINJECT_TAB") {
+      const sender = _sender;
+      const tabId = sender?.tab?.id;
+      if (!Number.isInteger(tabId)) {
+        sendResponse({ ok: false });
+        return;
+      }
+      if (await isTabEnabled(tabId)) {
+        await injectSNR(tabId);
+      }
+      sendResponse({ ok: true });
+      return;
+    }
+
+    if (message.type === "SNR_SAVE_CURRENT_RETIME") {
+      const senderTabId = _sender?.tab?.id;
+      const requested = Number(message.tabId);
+      const tabId = Number.isInteger(requested) ? requested : senderTabId;
       if (!Number.isInteger(tabId)) {
         sendResponse({ ok: false, error: "invalid_tab" });
         return;
@@ -267,7 +388,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           try {
             const response = await chrome.tabs.sendMessage(
               tabId,
-              { type: "ATS_COLLECT_STATE_FOR_SAVE" },
+              { type: "SNR_COLLECT_STATE_FOR_SAVE" },
               { frameId }
             );
             if (response?.ok) {
@@ -296,7 +417,25 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_GET_SAVED_RETIME") {
+    if (message.type === "SNR_SAVE_RETIME_STATE") {
+      const key = String(message.key || "");
+      const state = message.state;
+      if (!key || !state || typeof state !== "object") {
+        sendResponse({ ok: false, error: "invalid_payload" });
+        return;
+      }
+      const map = await getSavedRetimesMap();
+      map[key] = {
+        ...state,
+        savedAt: Date.now(),
+        title: typeof message.title === "string" ? message.title : ""
+      };
+      await setSavedRetimesMap(map);
+      sendResponse({ ok: true, key });
+      return;
+    }
+
+    if (message.type === "SNR_GET_SAVED_RETIME") {
       const key = String(message.key || "");
       if (!key) {
         sendResponse({ ok: false, state: null });
@@ -307,13 +446,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_EXPORT_SAVED_RETIMES") {
+    if (message.type === "SNR_EXPORT_SAVED_RETIMES") {
       const map = await getSavedRetimesMap();
       sendResponse({ ok: true, data: map });
       return;
     }
 
-    if (message.type === "ATS_EXPORT_CURRENT_RETIME") {
+    if (message.type === "SNR_EXPORT_CURRENT_RETIME") {
       const tabId = Number(message.tabId);
       if (!Number.isInteger(tabId)) {
         sendResponse({ ok: false, error: "invalid_tab" });
@@ -344,7 +483,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_IMPORT_SAVED_RETIMES") {
+    if (message.type === "SNR_IMPORT_SAVED_RETIMES") {
       const incoming = message.data;
       const parsed = parseImportedRetimes(incoming);
       const incomingCount = Object.keys(parsed).length;
@@ -361,7 +500,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_FRAME_REGISTER") {
+    if (message.type === "SNR_FRAME_REGISTER") {
       const sender = _sender;
       const tabId = sender?.tab?.id;
       const frameId = sender?.frameId;
@@ -379,7 +518,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_QUERY_FRAMES_STATUS") {
+    if (message.type === "SNR_QUERY_FRAMES_STATUS") {
       const sender = _sender;
       const tabId = sender?.tab?.id;
       if (!Number.isInteger(tabId)) {
@@ -392,7 +531,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         try {
           const response = await chrome.tabs.sendMessage(
             tabId,
-            { type: "ATS_FRAME_GET_STATUS" },
+            { type: "SNR_FRAME_GET_STATUS" },
             { frameId }
           );
           if (response?.ok) {
@@ -419,7 +558,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "ATS_RUN_FRAME_COMMAND") {
+    if (message.type === "SNR_RUN_FRAME_COMMAND") {
       const sender = _sender;
       const tabId = sender?.tab?.id;
       const frameId = Number(message.frameId);
@@ -432,7 +571,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         const response = await chrome.tabs.sendMessage(
           tabId,
           {
-            type: "ATS_FRAME_COMMAND",
+            type: "SNR_FRAME_COMMAND",
             command: message.command,
             payload: message.payload
           },
@@ -447,7 +586,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     sendResponse({ ok: false });
   })().catch((error) => {
-    console.error("[ATS] Runtime message error:", error);
+    console.error("[SNR] Runtime message error:", error);
     sendResponse({ ok: false, error: String(error) });
   });
 
@@ -459,11 +598,17 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
     return;
   }
   try {
+    const tab = await chrome.tabs.get(tabId);
+    if (isSpeedrunRunUrl(tab?.url) && (await getTabSpecialLayout(tabId))) {
+      await setTabEnabled(tabId, true);
+      await injectSNR(tabId);
+      return;
+    }
     if (await isTabEnabled(tabId)) {
-      await injectATS(tabId);
+      await injectSNR(tabId);
     }
   } catch (error) {
-    console.error("[ATS] Failed to auto-inject on tab update:", error);
+    console.error("[SNR] Failed to auto-inject on tab update:", error);
   }
 });
 
@@ -473,8 +618,11 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
     const modes = await getTabLabelModeMap();
     delete modes[String(tabId)];
     await setTabLabelModeMap(modes);
+    const special = await getTabSpecialLayoutMap();
+    delete special[String(tabId)];
+    await setTabSpecialLayoutMap(special);
     FRAME_REGISTRY.delete(tabId);
   } catch (error) {
-    console.error("[ATS] Failed to cleanup tab state:", error);
+    console.error("[SNR] Failed to cleanup tab state:", error);
   }
 });
