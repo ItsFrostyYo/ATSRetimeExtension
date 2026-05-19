@@ -145,16 +145,18 @@
   chrome.runtime.onMessage.addListener((msg,_se,send)=>{
     (async()=>{
       if(!msg?.type){send({ok:false});return;}
-      if(msg.type==="SNR_FRAME_GET_STATUS"){send({ok:true,status:lstat()});return;}
-      if(msg.type==="SNR_FRAME_COMMAND"){send(await runLocal(msg.command,msg.payload||{}));return;}
-      if(msg.type==="SNR_SET_LABEL_MODE"){
+      const rawType=String(msg.type||"");
+      const type=rawType.startsWith("ATS_")?`SNR_${rawType.slice(4)}`:rawType;
+      if(type==="SNR_FRAME_GET_STATUS"){send({ok:true,status:lstat()});return;}
+      if(type==="SNR_FRAME_COMMAND"){send(await runLocal(msg.command,msg.payload||{}));return;}
+      if(type==="SNR_SET_LABEL_MODE"){
         s.timeLabel=msg.mode==="LRT"?"LRT":"IGT";
         save();
         if(s.top)render();
         send({ok:true});
         return;
       }
-      if(msg.type==="SNR_SET_SPECIAL_LAYOUT"){
+      if(type==="SNR_SET_SPECIAL_LAYOUT"){
         s.specialLayout=!!msg.enabled;
         if(!s.specialLayout) srClear();
         save();
@@ -162,7 +164,7 @@
         send({ok:true});
         return;
       }
-      if(msg.type==="SNR_COLLECT_STATE_FOR_SAVE"){
+      if(type==="SNR_COLLECT_STATE_FOR_SAVE"){
         if(!s.top){send({ok:false,error:"not_top"});return;}
         const key=await getPersistKey();
         send({ok:true,key,state:buildPersistState(),title:document.title||""});

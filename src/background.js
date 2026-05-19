@@ -242,8 +242,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({ ok: false });
       return;
     }
+    const rawType = String(message.type || "");
+    const type = rawType.startsWith("ATS_") ? `SNR_${rawType.slice(4)}` : rawType;
 
-    if (message.type === "SNR_GET_TAB_STATE") {
+    if (type === "SNR_GET_TAB_STATE") {
       const tabId = Number(message.tabId);
       if (!Number.isInteger(tabId)) {
         sendResponse({ ok: false });
@@ -253,7 +255,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_SET_TAB_STATE") {
+    if (type === "SNR_SET_TAB_STATE") {
       const tabId = Number(message.tabId);
       const enabled = Boolean(message.enabled);
       if (!Number.isInteger(tabId)) {
@@ -271,7 +273,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_GET_TAB_LABEL_MODE") {
+    if (type === "SNR_GET_TAB_LABEL_MODE") {
       const tabId = Number(message.tabId);
       if (!Number.isInteger(tabId)) {
         sendResponse({ ok: false });
@@ -281,7 +283,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_SET_TAB_LABEL_MODE") {
+    if (type === "SNR_SET_TAB_LABEL_MODE") {
       const tabId = Number(message.tabId);
       const mode = normalizeLabelMode(message.mode);
       if (!Number.isInteger(tabId)) {
@@ -298,7 +300,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_GET_LABEL_MODE") {
+    if (type === "SNR_GET_LABEL_MODE") {
       const sender = _sender;
       const tabId = sender?.tab?.id;
       if (!Number.isInteger(tabId)) {
@@ -309,7 +311,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_GET_TAB_SPECIAL_LAYOUT") {
+    if (type === "SNR_GET_TAB_SPECIAL_LAYOUT") {
       const tabId = Number(message.tabId);
       if (!Number.isInteger(tabId)) {
         sendResponse({ ok: false });
@@ -319,7 +321,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_SET_TAB_SPECIAL_LAYOUT") {
+    if (type === "SNR_SET_TAB_SPECIAL_LAYOUT") {
       const tabId = Number(message.tabId);
       const enabled = Boolean(message.enabled);
       if (!Number.isInteger(tabId)) {
@@ -347,7 +349,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_GET_SPECIAL_LAYOUT") {
+    if (type === "SNR_GET_SPECIAL_LAYOUT") {
       const sender = _sender;
       const tabId = sender?.tab?.id;
       if (!Number.isInteger(tabId)) {
@@ -358,7 +360,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_REINJECT_TAB") {
+    if (type === "SNR_REINJECT_TAB") {
       const sender = _sender;
       const tabId = sender?.tab?.id;
       if (!Number.isInteger(tabId)) {
@@ -372,7 +374,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_SAVE_CURRENT_RETIME") {
+    if (type === "SNR_SAVE_CURRENT_RETIME") {
       const senderTabId = _sender?.tab?.id;
       const requested = Number(message.tabId);
       const tabId = Number.isInteger(requested) ? requested : senderTabId;
@@ -417,7 +419,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_SAVE_RETIME_STATE") {
+    if (type === "SNR_SAVE_RETIME_STATE") {
       const key = String(message.key || "");
       const state = message.state;
       if (!key || !state || typeof state !== "object") {
@@ -435,7 +437,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_GET_SAVED_RETIME") {
+    if (type === "SNR_GET_SAVED_RETIME") {
       const key = String(message.key || "");
       if (!key) {
         sendResponse({ ok: false, state: null });
@@ -446,13 +448,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_EXPORT_SAVED_RETIMES") {
+    if (type === "SNR_EXPORT_SAVED_RETIMES") {
       const map = await getSavedRetimesMap();
       sendResponse({ ok: true, data: map });
       return;
     }
 
-    if (message.type === "SNR_EXPORT_CURRENT_RETIME") {
+    if (type === "SNR_EXPORT_CURRENT_RETIME") {
       const tabId = Number(message.tabId);
       if (!Number.isInteger(tabId)) {
         sendResponse({ ok: false, error: "invalid_tab" });
@@ -483,7 +485,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_IMPORT_SAVED_RETIMES") {
+    if (type === "SNR_IMPORT_SAVED_RETIMES") {
       const incoming = message.data;
       const parsed = parseImportedRetimes(incoming);
       const incomingCount = Object.keys(parsed).length;
@@ -500,7 +502,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_FRAME_REGISTER") {
+    if (type === "SNR_FRAME_REGISTER") {
       const sender = _sender;
       const tabId = sender?.tab?.id;
       const frameId = sender?.frameId;
@@ -518,7 +520,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_QUERY_FRAMES_STATUS") {
+    if (type === "SNR_QUERY_FRAMES_STATUS") {
       const sender = _sender;
       const tabId = sender?.tab?.id;
       if (!Number.isInteger(tabId)) {
@@ -558,7 +560,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
 
-    if (message.type === "SNR_RUN_FRAME_COMMAND") {
+    if (type === "SNR_RUN_FRAME_COMMAND") {
       const sender = _sender;
       const tabId = sender?.tab?.id;
       const frameId = Number(message.frameId);
