@@ -914,7 +914,7 @@ const srPaintEditor=(el,p,host)=>{
       }
       actionNode = actionNode instanceof HTMLElement ? actionNode.cloneNode(true) : document.createElement("div");
       if(!(actionNode.className||"")) actionNode.className="flex-none";
-      actionNode.innerHTML="";
+      actionNode.replaceChildren();
       actionNode.style.display="flex";
       actionNode.style.alignItems="center";
       actionNode.style.justifyContent="flex-end";
@@ -926,7 +926,7 @@ const srPaintEditor=(el,p,host)=>{
       resetBtn.textContent="Reset All";
       actionNode.appendChild(resetBtn);
 
-      head.innerHTML="";
+      head.replaceChildren();
       if(srcHead instanceof HTMLElement) head.className=srcHead.className;
       head.style.display="flex";
       head.style.flexDirection="row";
@@ -944,20 +944,40 @@ const srPaintEditor=(el,p,host)=>{
       return af-bf;
     });
     if(!segs.length){
-      list.innerHTML=`<div class="ats-sr-ed-empty">No Load Removals Yet.</div>`;
+      const empty=document.createElement("div");
+      empty.className="ats-sr-ed-empty";
+      empty.textContent="No Load Removals Yet.";
+      list.appendChild(empty);
     } else {
-      list.innerHTML=segs.map((g)=>{
-      const sfm=Number.isFinite(g.startF)?g.startF:"?";
-      const efm=Number.isFinite(g.endF)?g.endF:"?";
-      const dur=srDur(g.durationMs);
-      const tog=g.enabled===false?"Add Back":"Remove";
-      return `<div class="ats-sr-ed-item"><div class="ats-sr-ed-meta"><span class="ats-sr-ed-frames">F: ${sfm} -> F: ${efm}</span><span class="ats-sr-ed-time">Removed Time: ${dur}</span></div><div class="ats-sr-ed-actions"><button class="ats-sr-ed-btn" data-a="redo" data-id="${g.id}">Redo</button><button class="ats-sr-ed-btn" data-a="toggle" data-id="${g.id}">${tog}</button><button class="ats-sr-ed-btn" data-a="delete" data-id="${g.id}">Delete</button></div></div>`;
-      }).join("");
+      for(const g of segs){
+        const item=document.createElement("div");
+        item.className="ats-sr-ed-item";
+        const meta=document.createElement("div");
+        meta.className="ats-sr-ed-meta";
+        const frames=document.createElement("span");
+        frames.className="ats-sr-ed-frames";
+        frames.textContent=`F: ${Number.isFinite(g.startF)?g.startF:"?"} -> F: ${Number.isFinite(g.endF)?g.endF:"?"}`;
+        const time=document.createElement("span");
+        time.className="ats-sr-ed-time";
+        time.textContent=`Removed Time: ${srDur(g.durationMs)}`;
+        const actions=document.createElement("div");
+        actions.className="ats-sr-ed-actions";
+        for(const [action,label] of [["redo","Redo"],["toggle",g.enabled===false?"Add Back":"Remove"],["delete","Delete"]]){
+          const button=document.createElement("button");
+          button.className="ats-sr-ed-btn";
+          button.dataset.a=action;
+          button.dataset.id=String(g.id);
+          button.textContent=label;
+          actions.appendChild(button);
+        }
+        meta.append(frames,time);
+        item.append(meta,actions);
+        list.appendChild(item);
+      }
     }
-    body.innerHTML="";
-    body.appendChild(list);
+    body.replaceChildren(list);
     el.className=clone.className;
-    el.innerHTML=clone.innerHTML;
+    el.replaceChildren(...[...clone.childNodes].map((node)=>node.cloneNode(true)));
     }catch{}
   };
 const srRenderEditor=(items)=>{
@@ -1051,13 +1071,31 @@ const srRenderEditor=(items)=>{
   function drawEditor(){
     const p=s.el.editor;
     if(!p) return;
-    if(!s.editor){ p.classList.add("hidden"); p.innerHTML=""; return; }
+    if(!s.editor){ p.classList.add("hidden"); p.replaceChildren(); return; }
     p.classList.remove("hidden");
     const rows=[...s.segs].sort((a,b)=>{const af=Number.isFinite(a.startF)?a.startF:a.startMs,bf=Number.isFinite(b.startF)?b.startF:b.startMs; return af-bf;});
-    const rowsHtml = rows.length
-      ? rows.map(g=>`<div class="row"><span class="pill">F: ${Number.isFinite(g.startF)?g.startF:"?"} -> F: ${Number.isFinite(g.endF)?g.endF:"?"}</span><span class="pill">${fmt(g.durationMs)}</span><button class="sbtn" data-a="redo" data-id="${g.id}">Redo</button><button class="sbtn" data-a="toggle" data-id="${g.id}">${g.enabled?"Remove":"Add Back"}</button><button class="sbtn" data-a="delete" data-id="${g.id}">Delete</button></div>`).join("")
-      : `<div class="empty">No load removals yet.</div>`;
-    p.innerHTML = `<div class="panel"><div class="head"><span class="ttl">Pause Time Editor</span></div><div class="list">${rowsHtml}</div><div class="foot"><button class="sbtn danger" data-a="reset-all">Reset All</button></div></div>`;
+    const panel=document.createElement("div"); panel.className="panel";
+    const head=document.createElement("div"); head.className="head";
+    const title=document.createElement("span"); title.className="ttl"; title.textContent="Pause Time Editor"; head.appendChild(title);
+    const list=document.createElement("div"); list.className="list";
+    if(!rows.length){
+      const empty=document.createElement("div"); empty.className="empty"; empty.textContent="No load removals yet."; list.appendChild(empty);
+    } else {
+      for(const g of rows){
+        const row=document.createElement("div"); row.className="row";
+        const frames=document.createElement("span"); frames.className="pill"; frames.textContent=`F: ${Number.isFinite(g.startF)?g.startF:"?"} -> F: ${Number.isFinite(g.endF)?g.endF:"?"}`;
+        const duration=document.createElement("span"); duration.className="pill"; duration.textContent=fmt(g.durationMs);
+        row.append(frames,duration);
+        for(const [action,label] of [["redo","Redo"],["toggle",g.enabled?"Remove":"Add Back"],["delete","Delete"]]){
+          const button=document.createElement("button"); button.className="sbtn"; button.dataset.a=action; button.dataset.id=String(g.id); button.textContent=label; row.appendChild(button);
+        }
+        list.appendChild(row);
+      }
+    }
+    const foot=document.createElement("div"); foot.className="foot";
+    const reset=document.createElement("button"); reset.className="sbtn danger"; reset.dataset.a="reset-all"; reset.textContent="Reset All"; foot.appendChild(reset);
+    panel.append(head,list,foot);
+    p.replaceChildren(panel);
   }
   function render(){
     if(!s.top||!s.enabled) return;
@@ -1235,7 +1273,6 @@ const srRenderEditor=(items)=>{
     h.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147483647;pointer-events:none;font-family:'SNRAller','Segoe UI',Tahoma,sans-serif";
     const sh=h.attachShadow({mode:"open"});
     sh.innerHTML=`<style>
-      @font-face{font-family:'SNRAller';src:url('${fontUrl}') format('truetype');font-weight:400;font-style:normal}
       .w{pointer-events:auto;box-sizing:border-box;width:100%;max-width:100vw;background:rgba(8,12,18,.97);border-top:1px solid rgba(85,120,156,.42);color:#ffffff;padding:6px 8px;display:grid;grid-template-columns:auto minmax(220px,1fr);gap:8px;align-items:center}
       .c{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
       .logo{width:clamp(40px,3.0vw,52px);height:clamp(40px,3.0vw,52px);display:block;object-fit:contain;flex:0 0 auto}
@@ -1274,7 +1311,7 @@ const srRenderEditor=(items)=>{
       .empty{color:#c9d7e8;background:#132133;border:1px solid #2f4b69;border-radius:8px;padding:8px 10px}
     </style>
     <div class="w" id="wr"><div class="c">
-      <img class="logo" id="lg" alt="" src="${logoUrl}" />
+      <img class="logo" id="lg" alt="" />
       <button class="b ib" id="p" title="Frame -1">&#8592;</button><button class="b ib" id="pp" title="Play/Pause">&#9654;</button><button class="b ib" id="n" title="Frame +1">&#8594;</button>
       <select class="s" id="sp"></select><select class="s" id="fm"></select>
       <button class="b" id="cs">Confirm Start</button><button class="b" id="ce">Confirm End</button><button class="b" id="pt">Pause Time</button><button class="b hiddenCtl" id="cr">Cancel Redo</button><button class="b" id="eb">Open Editor</button>
@@ -1284,6 +1321,9 @@ const srRenderEditor=(items)=>{
       <span class="site" id="si">Site: searching <video></span>
     </div></div><div class="ed hidden" id="ed"></div><div class="mn hidden" id="mn"><div class="mnT">Mod Note</div><textarea id="mnt" class="mnBox" spellcheck="false"></textarea><div class="mnRow"><span class="copyOk" id="mok">&#10003; Copied</span><button class="sbtn" id="mcp">Copy Mod Note</button><button class="sbtn" id="mth">Hide Mod Note</button></div></div>`;
 
+    const fontStyle=document.createElement("style");
+    fontStyle.textContent=`@font-face{font-family:'SNRAller';src:url('${fontUrl}') format('truetype');font-weight:400;font-style:normal}`;
+    sh.prepend(fontStyle);
     s.host=h; s.sh=sh;
     const sp=sh.getElementById("sp");
     for(const v of SPEEDS){const o=document.createElement("option"); o.value=v.toFixed(2); o.textContent=`${v.toFixed(2)}x`; sp.appendChild(o);}
@@ -1292,7 +1332,8 @@ const srRenderEditor=(items)=>{
     for(const m of MODES){const o=document.createElement("option"); o.value=m; o.textContent=labs[m]; fm.appendChild(o);}
 
     s.el={wrap:sh.getElementById("wr"),logo:sh.getElementById("lg"),prev:sh.getElementById("p"),play:sh.getElementById("pp"),next:sh.getElementById("n"),speed:sp,fps:fm,cStart:sh.getElementById("cs"),cEnd:sh.getElementById("ce"),pause:sh.getElementById("pt"),cancelRedo:sh.getElementById("cr"),editorBtn:sh.getElementById("eb"),editor:sh.getElementById("ed"),noteWrap:sh.getElementById("mn"),noteText:sh.getElementById("mnt"),copyTick:sh.getElementById("mok"),copyNote:sh.getElementById("mcp"),toggleNote:sh.getElementById("mth"),site:sh.getElementById("si"),start:sh.getElementById("st"),end:sh.getElementById("en"),rta:sh.getElementById("rt"),igt:sh.getElementById("ig")};
-    s.el.logo.onerror=()=>{ const f=chrome.runtime.getURL("SNRetimeExtension.png"); if(s.el.logo.src!==f){ s.el.logo.src=f; return; } s.el.logo.style.display="none"; };
+    s.el.logo.src=logoUrl;
+    s.el.logo.onerror=()=>{ s.el.logo.style.display="none"; };
     s.el.prev.onclick=()=>guard("p",async()=>{await ctlCmd("STEP_FRAME",{direction:-1}); await refreshCtl(); render();},70);
     s.el.next.onclick=()=>guard("n",async()=>{await ctlCmd("STEP_FRAME",{direction:1}); await refreshCtl(); render();},70);
     s.el.play.onclick=()=>guard("pp",async()=>{await ctlCmd("TOGGLE_PLAY_PAUSE",{userInitiated:true}); await refreshCtl(); render();},100);

@@ -1,0 +1,11 @@
+{
+  "name": "sn-retime-extension",
+  "version": "1.1.0",
+  "private": true,
+  "scripts": {
+    "build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1",
+    "build:chrome": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1 -Target chrome",
+    "build:firefox": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1 -Target firefox",
+    "check": "node --check src/background.js && node --check src/content.js && node --check src/popup.js"
+  }
+}
