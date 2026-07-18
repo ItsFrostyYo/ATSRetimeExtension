@@ -261,7 +261,7 @@ async function initPopup() {
       count: Object.keys(all).length,
       retimes: all
     };
-    const fileName = "ats-saved-retimes-all.json";
+    const fileName = "snr-saved-retimes-all.json";
     const json = JSON.stringify(payload, null, 2);
     let downloaded = false;
     try {

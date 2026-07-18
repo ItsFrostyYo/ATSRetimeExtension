@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "SNRetimeExtension",
   "short_name": "SNR",
-  "version": "1.0.0",
-  "description": "SNRetimeExtension is a Frame-Accurate Speedrun Retiming Tool for Youtube and Twitch, works on Speedrun.com.",
+  "version": "1.1.0",
+  "description": "A frame-accurate speedrun retiming tool for YouTube, Twitch, Speedrun.com, and HTML5 video.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -16,7 +16,6 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "SNRetimeExtension.png",
         "assets/aller.regular.ttf",
         "assets/icons/*"
       ],
@@ -30,9 +29,6 @@
     "32": "assets/icons/icon32.png",
     "48": "assets/icons/icon48.png",
     "128": "assets/icons/icon128.png"
-  },
-  "background": {
-    "service_worker": "src/background.js"
   },
   "action": {
     "default_title": "SNRetimeExtension",
